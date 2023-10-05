@@ -2,6 +2,17 @@ import os
 import time
 import subprocess
 import json
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Check if .env file exists
+if Path('.env').is_file():
+    load_dotenv()
+
+# Load environment variables
+POLLING_INTERVAL = int(os.getenv('POLLING_INTERVAL', 5))  # Default value is 5
+MOUNT_PARENT_DIR = os.getenv('MOUNT_PARENT_DIR', '/mnt')  # Default value is '/mnt'
+
 
 def get_device_info():
     try:
@@ -48,15 +59,15 @@ if __name__ == '__main__':
                 device_info = get_device_info()
                 for block_device in device_info.get('blockdevices', []):
                     if block_device.get('name') in dev:
-                        mount_point = f"/media/{block_device['name']}"
+                        mount_point = f"{MOUNT_PARENT_DIR}/{block_device['name']}"
                         fs_type = get_filesystem(dev_path)
                         if fs_type:
                             mount_device(dev_path, mount_point, fs_type)
 
         for dev in removed_devs:
             if 'sd' in dev:
-                mount_point = f"/media/{dev}"
+                mount_point = f"{MOUNT_PARENT_DIR}/{dev}"
                 unmount_device(mount_point)
 
         prev_devs = current_devs
-        time.sleep(5)
+        time.sleep(POLLING_INTERVAL)

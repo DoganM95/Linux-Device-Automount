@@ -5,13 +5,9 @@ import json
 from dotenv import load_dotenv
 from pathlib import Path
 
-# Check if .env file exists
-if Path('.env').is_file():
-    load_dotenv()
-
 # Load environment variables
 POLLING_INTERVAL = int(os.getenv('POLLING_INTERVAL', 5))
-MOUNT_PARENT_DIR = os.getenv('MOUNT_PARENT_DIR', '/mnt')
+MOUNT_PARENT_DIR = '/usb' # This folder houses all mounted devices inside the container, reflected to the bound volume
 
 # List of allowed filesystems
 allowed_filesystems = {'ntfs', 'exfat', 'ext4', 'ext3', 'ext2', 'fat32', 'fat16'}

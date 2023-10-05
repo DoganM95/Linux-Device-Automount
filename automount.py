@@ -16,7 +16,7 @@ def get_filesystem(device):
         lines = output.decode('utf-8').strip().split('\n')
         for line in lines:
             if line.startswith('TYPE='):
-                return line.split('=')[1]
+                return line.split('TYPE=')[1]
         return None
     except subprocess.CalledProcessError:
         return None
@@ -59,4 +59,4 @@ if __name__ == '__main__':
                 unmount_device(mount_point)
 
         prev_devs = current_devs
-        time.sleep(1)
+        time.sleep(5)

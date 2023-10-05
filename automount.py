@@ -11,8 +11,7 @@ if Path('.env').is_file():
 
 # Load environment variables
 POLLING_INTERVAL = int(os.getenv('POLLING_INTERVAL', 5))  # Default value is 5
-MOUNT_PARENT_DIR = os.getenv('MOUNT_PARENT_DIR', '/mnt')  # Default value is '/mnt'
-
+MOUNT_PARENT_DIR = os.getenv('MOUNT_PARENT_DIR', '/usb')
 
 def get_device_info():
     try:

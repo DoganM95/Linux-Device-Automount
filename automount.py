@@ -2,7 +2,6 @@ import os
 import time
 import subprocess
 import json
-from dotenv import load_dotenv
 from pathlib import Path
 
 # Load environment variables

@@ -1,2 +1,2 @@
 docker build -t automount .
-docker run --privileged -v /mnt:/mnt automount
+docker run --device=/dev/sda1 -v /mnt:/mnt automount

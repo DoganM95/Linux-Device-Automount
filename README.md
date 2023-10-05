@@ -1,5 +1,6 @@
 # Linux-Dev-Automount
-Docker container to mount linux devices to a specified parent folder
+Docker container to automatically mount linux devices to subfolders in a specified parent folder bound as a volume.
+Intended for use on a DIY NAS running Rockstor, which is missing this capability.
 
 # Tests
 - `lsblk` to get currently attached disks and their sdX

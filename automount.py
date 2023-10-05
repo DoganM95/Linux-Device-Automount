@@ -1,6 +1,7 @@
+import os
+import time
 import subprocess
 import json
-import pyudev
 
 def get_device_info():
     try:
@@ -35,24 +36,27 @@ def unmount_device(mount_point):
         print(f"Failed to unmount {mount_point}")
 
 if __name__ == '__main__':
-    context = pyudev.Context()
-    monitor = pyudev.Monitor.from_netlink(context)
-    monitor.filter_by('block')
+    prev_devs = set()
+    while True:
+        current_devs = set(os.listdir('/dev'))
+        added_devs = current_devs - prev_devs
+        removed_devs = prev_devs - current_devs
 
-    for device in iter(monitor.poll, None):
-        if device.action == 'add':
-            dev_path = device.device_node
-            if 'usb' in dev_path:
+        for dev in added_devs:
+            if 'sd' in dev:
+                dev_path = f"/dev/{dev}"
                 device_info = get_device_info()
                 for block_device in device_info.get('blockdevices', []):
-                    if block_device.get('name') in dev_path:
+                    if block_device.get('name') in dev:
                         mount_point = f"/media/{block_device['name']}"
                         fs_type = get_filesystem(dev_path)
                         if fs_type:
                             mount_device(dev_path, mount_point, fs_type)
 
-        elif device.action == 'remove':
-            dev_path = device.device_node
-            if 'usb' in dev_path:
-                mount_point = f"/media/{dev_path.split('/')[-1]}"
+        for dev in removed_devs:
+            if 'sd' in dev:
+                mount_point = f"/media/{dev}"
                 unmount_device(mount_point)
+
+        prev_devs = current_devs
+        time.sleep(1)

@@ -11,4 +11,4 @@ RUN apt-get update && \
 COPY automount.py /app/automount.py
 
 # Run the script
-CMD ["python", "/app/mount_usb.py"]
+CMD ["python", "/app/automount.py"]

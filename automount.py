@@ -10,8 +10,11 @@ if Path('.env').is_file():
     load_dotenv()
 
 # Load environment variables
-POLLING_INTERVAL = int(os.getenv('POLLING_INTERVAL', 5))  # Default value is 5
-MOUNT_PARENT_DIR = os.getenv('MOUNT_PARENT_DIR', '/usb')
+POLLING_INTERVAL = int(os.getenv('POLLING_INTERVAL', 5))
+MOUNT_PARENT_DIR = os.getenv('MOUNT_PARENT_DIR', '/mnt')
+
+# List of allowed filesystems
+allowed_filesystems = {'ntfs', 'exfat', 'ext4', 'ext3', 'ext2', 'fat32', 'fat16'}
 
 def get_device_info():
     try:
@@ -32,18 +35,24 @@ def get_filesystem(device):
         return None
 
 def mount_device(device, mount_point, fs_type):
-    try:
-        subprocess.run(['mount', '-t', fs_type, device, mount_point])
-        print(f"Device {device} mounted at {mount_point} with file system {fs_type}")
-    except subprocess.CalledProcessError:
-        print(f"Failed to mount {device}")
+    if fs_type.lower() in allowed_filesystems:
+        try:
+            subprocess.run(['mount', '-t', fs_type, device, mount_point])
+            print(f"Device {device} mounted at {mount_point} with file system {fs_type}")
+        except subprocess.CalledProcessError:
+            print(f"Failed to mount {device}")
+    else:
+        print(f"Filesystem {fs_type} not in allowed list. Skipping mount.")
 
-def unmount_device(mount_point):
-    try:
-        subprocess.run(['umount', mount_point])
-        print(f"Device at {mount_point} has been unmounted")
-    except subprocess.CalledProcessError:
-        print(f"Failed to unmount {mount_point}")
+def unmount_device(mount_point, fs_type):
+    if fs_type.lower() in allowed_filesystems:
+        try:
+            subprocess.run(['umount', mount_point])
+            print(f"Device at {mount_point} has been unmounted")
+        except subprocess.CalledProcessError:
+            print(f"Failed to unmount {mount_point}")
+    else:
+        print(f"Filesystem {fs_type} not in allowed list. Skipping unmount.")
 
 if __name__ == '__main__':
     prev_devs = set()
@@ -66,7 +75,8 @@ if __name__ == '__main__':
         for dev in removed_devs:
             if 'sd' in dev:
                 mount_point = f"{MOUNT_PARENT_DIR}/{dev}"
-                unmount_device(mount_point)
+                fs_type = get_filesystem(f"/dev/{dev}")
+                unmount_device(mount_point, fs_type)
 
         prev_devs = current_devs
         time.sleep(POLLING_INTERVAL)

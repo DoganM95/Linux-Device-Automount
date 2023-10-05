@@ -1,47 +1,35 @@
-import os
+import subprocess
 import time
+import pyudev
 
-mounted_points = set()
-
-while True:
+def get_mount_point(device):
     try:
-        # Get the list of all drives
-        drives = [d for d in os.listdir("/dev") if d.startswith("sd")]
-        new_mounts = set()
+        output = subprocess.check_output(['udisksctl', 'mount', '--block-device', device])
+        return output.decode('utf-8').split('at')[-1].strip()
+    except subprocess.CalledProcessError:
+        return None
 
-        for drive in drives:
-            # List partitions on the drive
-            partitions = [p for p in os.listdir(f"/dev/{drive}") if p.startswith(drive)]
-            
-            for part in partitions:
-                mount_point = f"/mnt/{part}"
+def unmount_device(device):
+    try:
+        subprocess.run(['udisksctl', 'unmount', '--block-device', device])
+    except subprocess.CalledProcessError:
+        pass
 
-                # Check if already mounted
-                if mount_point in mounted_points:
-                    new_mounts.add(mount_point)
-                    continue
-                
-                if not os.path.exists(mount_point):
-                    os.makedirs(mount_point)
+if __name__ == '__main__':
+    context = pyudev.Context()
+    monitor = pyudev.Monitor.from_netlink(context)
+    monitor.filter_by('block')
 
-                # Attempt to mount the partition
-                result = os.system(f"mount /dev/{part} {mount_point}")
+    for device in iter(monitor.poll, None):
+        if device.action == 'add':
+            dev_path = device.device_node
+            if 'usb' in dev_path:
+                mount_point = get_mount_point(dev_path)
+                if mount_point:
+                    print(f"Device {dev_path} mounted at {mount_point}")
 
-                if result == 0:
-                    print(f"Successfully mounted /dev/{part} to {mount_point}")
-                    new_mounts.add(mount_point)
-                else:
-                    print(f"Failed to mount /dev/{part}")
-
-        # Unmount any drives that were removed
-        to_unmount = mounted_points - new_mounts
-        for mount_point in to_unmount:
-            print(f"Unmounting {mount_point}")
-            os.system(f"umount {mount_point}")
-
-        mounted_points = new_mounts
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-    time.sleep(10)
+        elif device.action == 'remove':
+            dev_path = device.device_node
+            if 'usb' in dev_path:
+                unmount_device(dev_path)
+                print(f"Device {dev_path} has been unmounted")

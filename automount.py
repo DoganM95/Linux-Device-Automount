@@ -1,19 +1,38 @@
 import subprocess
-import time
+import json
 import pyudev
 
-def get_mount_point(device):
+def get_device_info():
     try:
-        output = subprocess.check_output(['udisksctl', 'mount', '--block-device', device])
-        return output.decode('utf-8').split('at')[-1].strip()
+        output = subprocess.check_output(['lsblk', '--json'])
+        return json.loads(output)
     except subprocess.CalledProcessError:
         return None
 
-def unmount_device(device):
+def get_filesystem(device):
     try:
-        subprocess.run(['udisksctl', 'unmount', '--block-device', device])
+        output = subprocess.check_output(['blkid', '-o', 'export', device])
+        lines = output.decode('utf-8').strip().split('\n')
+        for line in lines:
+            if line.startswith('TYPE='):
+                return line.split('=')[1]
+        return None
     except subprocess.CalledProcessError:
-        pass
+        return None
+
+def mount_device(device, mount_point, fs_type):
+    try:
+        subprocess.run(['mount', '-t', fs_type, device, mount_point])
+        print(f"Device {device} mounted at {mount_point} with file system {fs_type}")
+    except subprocess.CalledProcessError:
+        print(f"Failed to mount {device}")
+
+def unmount_device(mount_point):
+    try:
+        subprocess.run(['umount', mount_point])
+        print(f"Device at {mount_point} has been unmounted")
+    except subprocess.CalledProcessError:
+        print(f"Failed to unmount {mount_point}")
 
 if __name__ == '__main__':
     context = pyudev.Context()
@@ -24,12 +43,16 @@ if __name__ == '__main__':
         if device.action == 'add':
             dev_path = device.device_node
             if 'usb' in dev_path:
-                mount_point = get_mount_point(dev_path)
-                if mount_point:
-                    print(f"Device {dev_path} mounted at {mount_point}")
+                device_info = get_device_info()
+                for block_device in device_info.get('blockdevices', []):
+                    if block_device.get('name') in dev_path:
+                        mount_point = f"/media/{block_device['name']}"
+                        fs_type = get_filesystem(dev_path)
+                        if fs_type:
+                            mount_device(dev_path, mount_point, fs_type)
 
         elif device.action == 'remove':
             dev_path = device.device_node
             if 'usb' in dev_path:
-                unmount_device(dev_path)
-                print(f"Device {dev_path} has been unmounted")
+                mount_point = f"/media/{dev_path.split('/')[-1]}"
+                unmount_device(mount_point)

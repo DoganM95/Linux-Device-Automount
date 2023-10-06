@@ -25,15 +25,18 @@ def get_device_info():
 
 def get_filesystem(device):
     try:
-        output = subprocess.check_output(['blkid', '-o', 'export', device])
+        command = ['blkid', '-o', 'export', device]
+        logging.info(f"Running command: {' '.join(command)}")
+        output = subprocess.check_output(command)
         lines = output.decode('utf-8').strip().split('\n')
         for line in lines:
             if line.startswith('TYPE='):
                 return line.split('TYPE=')[1]
         return None
-    except Exception as e:
-        logging.error(f"Failed to fetch filesystem type for {device}: {e}")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to fetch filesystem type for {device}. Command: {' '.join(command)}, Error: {e}")
         return None
+
 
 def mount_device(device, mount_point, fs_type):
     if fs_type and fs_type.lower() in allowed_filesystems:

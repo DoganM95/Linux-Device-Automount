@@ -3,7 +3,6 @@ import time
 import subprocess
 import json
 import logging
-from pathlib import Path
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -14,19 +13,30 @@ MOUNT_PARENT_DIR = '/usb'
 
 # Currently active mount points
 active_mounts = set()
-
 # List of allowed filesystems
 allowed_filesystems = {'ntfs', 'exfat', 'xfs', 'vfat', 'ext4', 'ext3', 'ext2', 'fat32', 'fat16'}
+
+def unmount_existing_devices():
+    global active_mounts  # Declare it as global if you're modifying it
+    for mount_point in os.listdir(MOUNT_PARENT_DIR):
+        full_mount_point = os.path.join(MOUNT_PARENT_DIR, mount_point)
+        if os.path.isdir(full_mount_point):
+            try:
+                subprocess.run(['umount', '-l', full_mount_point], check=True)
+                logging.info(f"Unmounted existing device at {full_mount_point}")
+            except Exception as e:
+                logging.error(f"Failed to unmount existing device at {full_mount_point}: {e}")
+    active_mounts = set()  # Reset the active mounts
 
 def remove_empty_dirs(path):
     for dirpath, dirnames, filenames in os.walk(path, topdown=False):
         for dirname in dirnames:
             full_dirpath = os.path.join(dirpath, dirname)
             try:
-                if not os.listdir(full_dirpath) and full_dirpath not in active_mounts:
+                if not os.listdir(full_dirpath):
                     logging.info(f"Removing empty directory: {full_dirpath}")
                     os.rmdir(full_dirpath)
-            except OSError as e:
+            except Exception as e:
                 logging.warning(f"Could not remove directory {full_dirpath}: {e}")
 
 def get_device_info():
@@ -39,9 +49,7 @@ def get_device_info():
 
 def get_filesystem(device):
     try:
-        command = ['blkid', '-o', 'export', device]
-        logging.info(f"Running command: {' '.join(command)}")
-        output = subprocess.check_output(command)
+        output = subprocess.check_output(['blkid', '-o', 'export', device])
         lines = output.decode('utf-8').strip().split('\n')
         for line in lines:
             if line.startswith('TYPE='):
@@ -52,29 +60,22 @@ def get_filesystem(device):
         return None
 
 def mount_device(device, mount_point, fs_type):
-    if fs_type and fs_type.lower() in allowed_filesystems:
-        try:
-            subprocess.run(['mount', '-t', fs_type, device, mount_point], check=True)
-            logging.info(f"Device {device} mounted at {mount_point} with filesystem {fs_type}")
-            active_mounts.add(mount_point)
-        except Exception as e:
-            logging.error(f"Failed to mount {device}: {e}")
-
-def unmount_device(mount_point):
     try:
-        subprocess.run(['umount', mount_point], check=True)
-        logging.info(f"Device at {mount_point} has been unmounted")
-        if mount_point in active_mounts:
-            active_mounts.remove(mount_point)
+        subprocess.run(['mount', '-t', fs_type, device, mount_point], check=True)
+        logging.info(f"Device {device} mounted at {mount_point} with filesystem {fs_type}")
     except Exception as e:
-        logging.error(f"Failed to unmount {mount_point}: {e}")
+        logging.error(f"Failed to mount {device}: {e}")
 
 if __name__ == '__main__':
     logging.info("Starting device monitoring")
+    
+    # Unmount all existing devices and reset active_mounts
+    unmount_existing_devices()
+
     prev_devs = set()
     while True:
         remove_empty_dirs(MOUNT_PARENT_DIR)
-
+        
         current_devs = set([dev for dev in os.listdir('/dev') if 'sd' in dev])
         added_devs = current_devs - prev_devs
         removed_devs = prev_devs - current_devs
@@ -83,17 +84,20 @@ if __name__ == '__main__':
             logging.info(f"New device detected: {dev}")
             dev_path = f"/dev/{dev}"
             fs_type = get_filesystem(dev_path)
-            if fs_type:
+            if fs_type and fs_type.lower() in allowed_filesystems:
                 mount_point = f"{MOUNT_PARENT_DIR}/{dev}"
                 if not os.path.exists(mount_point):
                     os.makedirs(mount_point)
                 mount_device(dev_path, mount_point, fs_type)
 
-        for mount_point in list(active_mounts):
-            dev = os.path.basename(mount_point)
-            if dev not in current_devs:
-                logging.info(f"Device removed: {dev}")
-                unmount_device(mount_point)
+        for dev in removed_devs:
+            logging.info(f"Device removed: {dev}")
+            mount_point = f"{MOUNT_PARENT_DIR}/{dev}"
+            try:
+                subprocess.run(['umount', '-l', mount_point], check=True)
+                logging.info(f"Device at {mount_point} has been unmounted")
+            except Exception as e:
+                logging.error(f"Failed to unmount {mount_point}: {e}")
 
         prev_devs = current_devs
         time.sleep(POLLING_INTERVAL)

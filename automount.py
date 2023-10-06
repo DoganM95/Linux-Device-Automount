@@ -13,7 +13,7 @@ POLLING_INTERVAL = int(os.getenv('POLLING_INTERVAL', 5))
 MOUNT_PARENT_DIR = '/usb' # This folder houses all mounted devices inside the container, reflected to the bound volume
 
 # List of allowed filesystems
-allowed_filesystems = {'ntfs', 'exfat', 'ext4', 'ext3', 'ext2', 'fat32', 'fat16'}
+allowed_filesystems = {'ntfs', 'exfat', 'xfs', 'vfat', 'ext4', 'ext3', 'ext2', 'fat32', 'fat16'}
 
 def get_device_info():
     try:

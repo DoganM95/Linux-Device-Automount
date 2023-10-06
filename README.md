@@ -1,6 +1,6 @@
 # Linux-Device-Automount
 Docker container to automatically mount linux devices to subfolders in a specified parent folder bound as a volume.
-Intended for use on a DIY NAS running Rockstor, which is missing this capability.
+Intended for use on a DIY NAS running Rockstor, which is missing this capability but probably works univarsally.
 
 ## Setup
 https://hub.docker.com/r/doganm95/linux-device-automount

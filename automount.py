@@ -46,14 +46,18 @@ def mount_device(device, mount_point, fs_type):
         logging.warning(f"Filesystem {fs_type} not in allowed list. Skipping mount.")
 
 def unmount_device(mount_point, fs_type):
-    if fs_type.lower() in allowed_filesystems:
-        try:
-            subprocess.run(['umount', mount_point])
-            logging.info(f"Device at {mount_point} has been unmounted")
-        except subprocess.CalledProcessError as e:
-            logging.error(f"Failed to unmount {mount_point}: {e}")
+    if fs_type:
+        if fs_type.lower() in allowed_filesystems:
+            try:
+                subprocess.run(['umount', mount_point])
+                logging.info(f"Device at {mount_point} has been unmounted")
+            except subprocess.CalledProcessError as e:
+                logging.error(f"Failed to unmount {mount_point}: {e}")
+        else:
+            logging.warning(f"Filesystem {fs_type} not in allowed list. Skipping unmount.")
     else:
-        logging.warning(f"Filesystem {fs_type} not in allowed list. Skipping unmount.")
+        logging.error(f"Filesystem type is None. Cannot proceed with unmount.")
+
 
 if __name__ == '__main__':
     logging.info("Starting device monitoring")

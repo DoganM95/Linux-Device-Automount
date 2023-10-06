@@ -2,11 +2,15 @@ import os
 import time
 import subprocess
 import json
+import logging
 from pathlib import Path
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Load environment variables
 POLLING_INTERVAL = int(os.getenv('POLLING_INTERVAL', 5))
-MOUNT_PARENT_DIR = '/usb' # This folder houses all mounted devices inside the container, reflected to the bound volume
+MOUNT_PARENT_DIR = '/usb'  # This folder houses all mounted devices inside the container, reflected to the bound volume
 
 # List of allowed filesystems
 allowed_filesystems = {'ntfs', 'exfat', 'ext4', 'ext3', 'ext2', 'fat32', 'fat16'}
@@ -15,7 +19,8 @@ def get_device_info():
     try:
         output = subprocess.check_output(['lsblk', '--json'])
         return json.loads(output)
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to fetch device info: {e}")
         return None
 
 def get_filesystem(device):
@@ -26,30 +31,32 @@ def get_filesystem(device):
             if line.startswith('TYPE='):
                 return line.split('TYPE=')[1]
         return None
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to fetch filesystem type for {device}: {e}")
         return None
 
 def mount_device(device, mount_point, fs_type):
     if fs_type.lower() in allowed_filesystems:
         try:
             subprocess.run(['mount', '-t', fs_type, device, mount_point])
-            print(f"Device {device} mounted at {mount_point} with file system {fs_type}")
-        except subprocess.CalledProcessError:
-            print(f"Failed to mount {device}")
+            logging.info(f"Device {device} mounted at {mount_point} with file system {fs_type}")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to mount {device}: {e}")
     else:
-        print(f"Filesystem {fs_type} not in allowed list. Skipping mount.")
+        logging.warning(f"Filesystem {fs_type} not in allowed list. Skipping mount.")
 
 def unmount_device(mount_point, fs_type):
     if fs_type.lower() in allowed_filesystems:
         try:
             subprocess.run(['umount', mount_point])
-            print(f"Device at {mount_point} has been unmounted")
-        except subprocess.CalledProcessError:
-            print(f"Failed to unmount {mount_point}")
+            logging.info(f"Device at {mount_point} has been unmounted")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to unmount {mount_point}: {e}")
     else:
-        print(f"Filesystem {fs_type} not in allowed list. Skipping unmount.")
+        logging.warning(f"Filesystem {fs_type} not in allowed list. Skipping unmount.")
 
 if __name__ == '__main__':
+    logging.info("Starting device monitoring")
     prev_devs = set()
     while True:
         current_devs = set(os.listdir('/dev'))
@@ -58,6 +65,7 @@ if __name__ == '__main__':
 
         for dev in added_devs:
             if 'sd' in dev:
+                logging.info(f"New device detected: {dev}")
                 dev_path = f"/dev/{dev}"
                 device_info = get_device_info()
                 for block_device in device_info.get('blockdevices', []):
@@ -69,6 +77,7 @@ if __name__ == '__main__':
 
         for dev in removed_devs:
             if 'sd' in dev:
+                logging.info(f"Device removed: {dev}")
                 mount_point = f"{MOUNT_PARENT_DIR}/{dev}"
                 fs_type = get_filesystem(f"/dev/{dev}")
                 unmount_device(mount_point, fs_type)

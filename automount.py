@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 POLLING_INTERVAL = int(os.getenv('POLLING_INTERVAL', 5))
 MOUNT_PARENT_DIR = '/usb'
 
-# Currently activemount points
+# Currently active mount points
 active_mounts = set()
 
 # List of allowed filesystems
@@ -23,8 +23,11 @@ def remove_empty_dirs(path):
         for dirname in dirnames:
             full_dirpath = os.path.join(dirpath, dirname)
             if not os.listdir(full_dirpath) and full_dirpath not in active_mounts:
-                logging.info(f"Removing empty directory: {full_dirpath}")
-                os.rmdir(full_dirpath)
+                try:
+                    logging.info(f"Removing empty directory: {full_dirpath}")
+                    os.rmdir(full_dirpath)
+                except OSError as e:
+                    logging.warning(f"Could not remove directory {full_dirpath}: {e}")
 
 def get_device_info():
     try:

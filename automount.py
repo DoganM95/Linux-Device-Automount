@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Load environment variables
 POLLING_INTERVAL = int(os.getenv('POLLING_INTERVAL', 5))
-MOUNT_PARENT_DIR = '/usb' # This folder houses all mounted devices inside the container, reflected to the bound volume
+MOUNT_PARENT_DIR = '/usb'
 
 # List of allowed filesystems
 allowed_filesystems = {'ntfs', 'exfat', 'xfs', 'vfat', 'ext4', 'ext3', 'ext2', 'fat32', 'fat16'}
@@ -19,7 +19,7 @@ def get_device_info():
     try:
         output = subprocess.check_output(['lsblk', '--json'])
         return json.loads(output)
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         logging.error(f"Failed to run lsblk: {e}")
         return None
 
@@ -31,16 +31,16 @@ def get_filesystem(device):
             if line.startswith('TYPE='):
                 return line.split('TYPE=')[1]
         return None
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         logging.error(f"Failed to fetch filesystem type for {device}: {e}")
         return None
 
 def mount_device(device, mount_point, fs_type):
     if fs_type and fs_type.lower() in allowed_filesystems:
         try:
-            subprocess.run(['mount', '-t', fs_type, device, mount_point])
+            subprocess.run(['mount', '-t', fs_type, device, mount_point], check=True)
             logging.info(f"Device {device} mounted at {mount_point} with filesystem {fs_type}")
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             logging.error(f"Failed to mount {device}: {e}")
     else:
         logging.warning(f"Filesystem {fs_type} not in allowed list. Skipping mount.")
@@ -48,9 +48,9 @@ def mount_device(device, mount_point, fs_type):
 def unmount_device(mount_point, fs_type):
     if fs_type and fs_type.lower() in allowed_filesystems:
         try:
-            subprocess.run(['umount', mount_point])
+            subprocess.run(['umount', mount_point], check=True)
             logging.info(f"Device at {mount_point} has been unmounted")
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             logging.error(f"Failed to unmount {mount_point}: {e}")
     else:
         logging.error(f"Filesystem type is None. Cannot proceed with unmount.")
@@ -68,10 +68,11 @@ if __name__ == '__main__':
                 logging.info(f"New device detected: {dev}")
                 dev_path = f"/dev/{dev}"
                 fs_type = get_filesystem(dev_path)
-                mount_point = f"{MOUNT_PARENT_DIR}/{dev}"
-                if not os.path.exists(mount_point):
-                    os.makedirs(mount_point)
-                mount_device(dev_path, mount_point, fs_type)
+                if fs_type:
+                    mount_point = f"{MOUNT_PARENT_DIR}/{dev}"
+                    if not os.path.exists(mount_point):
+                        os.makedirs(mount_point)
+                    mount_device(dev_path, mount_point, fs_type)
 
         for dev in removed_devs:
             if 'sd' in dev:

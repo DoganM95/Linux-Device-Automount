@@ -21,7 +21,7 @@ NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
 sde           8:64   0 931.5G  0 disk
 └─sdb1        8:66   0 931.5G  0 part /mnt/external/devices/sdb1
 ```
-The partition is now mounted as a folder and can be accessed using shell, UI, whatever.
+The partition is now mounted as a folder and can be accessed using shell, UI, FTP, SMB, whatever.
 
 ## Setup
 https://hub.docker.com/r/doganm95/linux-device-automount

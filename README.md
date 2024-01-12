@@ -1,6 +1,6 @@
 ## Intro
-Docker container to automatically mount linux devices to subfolders in a specified parent folder bound as a volume.
-Intended for use on a DIY NAS running Rockstor, which is missing this capability but probably works univarsally.
+Docker container to automatically mount linux devices mass storage devices attached via usb) to subfolders in a specified parent folder, bound as a volume.
+Intended for use on a DIY NAS running Rockstor, which is missing this capability but probably works universally.
 
 ## Functionality
 - Initially unmounts all devices that had a subdir in the volume that is bound to /usb
@@ -15,7 +15,7 @@ NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
 sdb           8:64   0 931.5G  0 disk
 └─sdb1        8:65   0    16M  0 part
 ```
-The container would recognize the new `sdX` device (here `sdb`) and mount its partition(s) under `/mnt/external/devices/sdb1` and so on, if more than onepartition exists, resulting in
+The container would recognize the new `sdX` device (here `sdb`) and mount its partition(s) under `/mnt/external/devices/sdb1` and so on, if more than one partition exists, resulting in
 ```
 NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
 sde           8:64   0 931.5G  0 disk

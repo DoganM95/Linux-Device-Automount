@@ -1,5 +1,5 @@
 ## Intro
-Docker container to automatically mount linux devices mass storage devices attached via usb) to subfolders in a specified parent folder, bound as a volume.
+Docker container to automatically mount linux devices (mass storage devices attached via usb) to subfolders in a specified parent folder, bound as a volume.
 Intended for use on a DIY NAS running Rockstor, which is missing this capability but probably works universally.
 
 ## Functionality

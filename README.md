@@ -23,5 +23,19 @@ sde           8:64   0 931.5G  0 disk
 ```
 The partition is now mounted as a folder and can be accessed using shell, UI, FTP, SMB, whatever.
 
-## Setup
-https://hub.docker.com/r/doganm95/linux-device-automount
+## Docker
+
+```bash
+docker run \
+    -d \
+    --privileged \
+    -e POLLING_INTERVAL=5 \
+    -v /dev:/dev \
+    -v /parentFolderToContainSubDirsWithDevMounts:/usb:rshared \
+    --name doganm95-linux-device-automount \
+    doganm95/linux-device-automount:latest
+```
+
+- Replace `/parentFolderToContainSubDirsWithDevMounts` with your folder path
+- Replace `POLLING_INTERVAL` with the time in seconds the detection loop should wait between each iteration
+- Don't touch `/dev:/dev`, this is necessary to let the container access the host devices

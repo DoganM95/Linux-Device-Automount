@@ -4,20 +4,16 @@ import subprocess
 import json
 import logging
 
-# Setup logging
 logging.basicConfig(level=logging.INFO)
 
-# Load environment variables
 POLLING_INTERVAL = int(os.getenv('POLLING_INTERVAL', 5))
 MOUNT_PARENT_DIR = '/usb'
 
-# Currently active mount points
 active_mounts = set()
-# List of allowed filesystems
 allowed_filesystems = {'ntfs', 'exfat', 'xfs', 'vfat', 'ext4', 'ext3', 'ext2', 'fat32', 'fat16'}
 
 def unmount_existing_devices():
-    global active_mounts  # Declare it as global if you're modifying it
+    global active_mounts
     for mount_point in os.listdir(MOUNT_PARENT_DIR):
         full_mount_point = os.path.join(MOUNT_PARENT_DIR, mount_point)
         if os.path.isdir(full_mount_point):
@@ -26,7 +22,7 @@ def unmount_existing_devices():
                 logging.info(f"Unmounted existing device at {full_mount_point}")
             except Exception as e:
                 logging.error(f"Failed to unmount existing device at {full_mount_point}: {e}")
-    active_mounts = set()  # Reset the active mounts
+    active_mounts = set()
 
 def remove_empty_dirs(path):
     for dirpath, dirnames, filenames in os.walk(path, topdown=False):
@@ -69,7 +65,6 @@ def mount_device(device, mount_point, fs_type):
 if __name__ == '__main__':
     logging.info("Starting device monitoring")
     
-    # Unmount all existing devices and reset active_mounts
     unmount_existing_devices()
 
     prev_devs = set()

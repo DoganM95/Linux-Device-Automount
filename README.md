@@ -31,11 +31,11 @@ docker run \
     --privileged \
     -e POLLING_INTERVAL=5 \
     -v /dev:/dev \
-    -v /parentFolderToContainSubDirsWithDevMounts:/usb:rshared \
+    -v /parent_folder:/usb:rshared \
     --name doganm95-linux-device-automount \
     ghcr.io/doganm95/linux-device-automount:latest
 ```
 
-- Replace `/parentFolderToContainSubDirsWithDevMounts` with your folder path
+- Replace `/parent_folder` with your folder path
 - Replace `POLLING_INTERVAL` with the time in seconds the detection loop should wait between each iteration
 - Don't touch `/dev:/dev`, this is necessary to let the container access the host devices

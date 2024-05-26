@@ -33,7 +33,7 @@ docker run \
     -v /dev:/dev \
     -v /parentFolderToContainSubDirsWithDevMounts:/usb:rshared \
     --name doganm95-linux-device-automount \
-    doganm95/linux-device-automount:latest
+    ghcr.io/doganm95/linux-device-automount:latest
 ```
 
 - Replace `/parentFolderToContainSubDirsWithDevMounts` with your folder path

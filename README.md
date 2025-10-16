@@ -2,7 +2,7 @@
 
 Automatically mount (mass storage) devices attached via usb to a linux host as sub-folders inside a user-defined parent folder.
 
-## Functionality
+## Features
 
 - Initially unmounts all devices that had a subdir in the volume that is bound to /usb
 - Automatically mounts devices with filesystem of type `{'ntfs', 'exfat', 'xfs', 'vfat', 'ext4', 'ext3', 'ext2', 'fat32', 'fat16'}`

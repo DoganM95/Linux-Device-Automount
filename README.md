@@ -36,6 +36,6 @@ docker run \
     ghcr.io/doganm95/linux-device-automount:latest
 ```
 
-- Replace `/parent_folder` with your folder path
+- Replace `/parent_folder` with the parent folder, you want the mass storage devices mounted in as sub-folders
 - Replace `POLLING_INTERVAL` with the time in seconds the detection loop should wait between each iteration
 - Don't touch `/dev:/dev`, this is necessary to let the container access the host devices

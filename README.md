@@ -1,13 +1,15 @@
 ## Intro
-Docker container to automatically mount linux devices (mass storage devices attached via usb) to subfolders in a specified parent folder, bound as a volume.
-Intended for use on a DIY NAS running Rockstor, which is missing this capability but probably works universally.
+
+Automatically mount (mass storage) devices attached via usb to a linux host as sub-folders inside a user-defined parent folder.
 
 ## Functionality
+
 - Initially unmounts all devices that had a subdir in the volume that is bound to /usb
 - Automatically mounts devices with filesystem of type `{'ntfs', 'exfat', 'xfs', 'vfat', 'ext4', 'ext3', 'ext2', 'fat32', 'fat16'}`
 - Mounted folder becomes a subdirectory of the parent (see volume) named after its partition-name
 
 ## Example
+
 If the container runs with e.g. `-v "/mnt/external/devices:/usb:rshared"`, the devices connected to the host via usb would mount under `mnt/external/devices`.
 E.g. a usb stick with 4 GB with a partition formatted to exFat would ususally pop up as `/dev/sdX`, in this example `/dev/sdb`. The device tree of `lsblk` would look like this:
 ```
